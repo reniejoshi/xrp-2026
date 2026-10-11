@@ -1,35 +1,35 @@
 <?xml version="1.0"?>
 <ruleset name="Bear Metal Rules"
-         xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+  xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
 
-    <description>
-        PMD rules for FRC Robot Code - focused on unused code and common bugs
-    </description>
+  <description>
+    PMD rules for FRC Robot Code - focused on unused code and common bugs
+  </description>
 
-    <!-- Unused Code Rules -->
-    <rule ref="category/java/bestpractices.xml/UnusedPrivateField"/>
-    <rule ref="category/java/bestpractices.xml/UnusedLocalVariable"/>
-    <rule ref="category/java/bestpractices.xml/UnusedFormalParameter">
-        <properties>
-            <!-- Allow unused parameters in overridden methods -->
-            <property name="checkAll" value="false"/>
-        </properties>
-    </rule>
-    <rule ref="category/java/bestpractices.xml/UnusedPrivateMethod"/>
+  <!-- Unused Code Rules -->
+  <rule ref="category/java/bestpractices.xml/UnusedPrivateField" />
+  <rule ref="category/java/bestpractices.xml/UnusedLocalVariable" />
+  <rule ref="category/java/bestpractices.xml/UnusedFormalParameter">
+    <properties>
+      <!-- Allow unused parameters in overridden methods -->
+      <property name="checkAll" value="false" />
+    </properties>
+  </rule>
+  <rule ref="category/java/bestpractices.xml/UnusedPrivateMethod" />
 
-    <!-- Unused Imports -->
-    <rule ref="category/java/codestyle.xml/UnnecessaryImport"/>
+  <!-- Unused Imports -->
+  <rule ref="category/java/codestyle.xml/UnnecessaryImport" />
 
-    <!-- Common Bug Patterns -->
-    <rule ref="category/java/errorprone.xml/EmptyCatchBlock">
-        <properties>
-            <property name="allowCommentedBlocks" value="true"/>
-        </properties>
-    </rule>
-    <rule ref="category/java/errorprone.xml/JumbledIncrementer"/>
-    <rule ref="category/java/errorprone.xml/UnconditionalIfStatement"/>
-    <rule ref="category/java/errorprone.xml/BrokenNullCheck"/>
+  <!-- Common Bug Patterns -->
+  <rule ref="category/java/errorprone.xml/EmptyCatchBlock">
+    <properties>
+      <property name="allowCommentedBlocks" value="true" />
+    </properties>
+  </rule>
+  <rule ref="category/java/errorprone.xml/JumbledIncrementer" />
+  <rule ref="category/java/errorprone.xml/UnconditionalIfStatement" />
+  <rule ref="category/java/errorprone.xml/BrokenNullCheck" />
 
 </ruleset>
