@@ -1,0 +1,64 @@
+name: PR Description Check
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened, ready_for_review]
+    branches: [main]
+
+jobs:
+  check-pr-description:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check PR description length
+      env:
+        PR_BODY: ${{ github.event.pull_request.body }}
+      run: |
+        # Clean up line endings
+        PR_BODY=$(echo "$PR_BODY" | tr -d '\r')
+        MIN_LENGTH=50
+
+        # Remove markdown formatting for length check
+        CLEAN_BODY=$(echo "$PR_BODY" | sed 's/`//g' | sed 's/\*\*//g' | sed 's/\*//g' | sed 's/###*//g' | sed 's/---*//g')
+
+        # Check for unmodified template placeholder text
+        TEMPLATE_PHRASES=(
+          "Briefly describe the changes made in this PR"
+          "List the key changes, files modified, or features added"
+          "Be specific about what was implemented"
+          "What problem does this solve"
+          "Why was this approach chosen"
+          "How have you tested these changes"
+          "Unit tests added/updated"
+          "Manual testing performed"
+          "Any edge cases considered"
+          "Are there any breaking changes"
+          "Add screenshots, videos, or other media"
+          "Link to any related issues or PRs"
+          "Closes #issue_number"
+          "Related to #issue_number"
+        )
+
+        FOUND_PLACEHOLDERS=0
+        for phrase in "${TEMPLATE_PHRASES[@]}"; do
+          if echo "$PR_BODY" | grep -qF "$phrase"; then
+            FOUND_PLACEHOLDERS=$((FOUND_PLACEHOLDERS + 1))
+          fi
+        done
+
+        if [ $FOUND_PLACEHOLDERS -ge 3 ]; then
+          echo "❌ PR description appears to be the unmodified template ($FOUND_PLACEHOLDERS placeholder phrases detected)."
+          echo "💡 Please replace the template text with actual information about your changes."
+          exit 1
+        fi
+
+        if [ ${#CLEAN_BODY} -lt $MIN_LENGTH ]; then
+          echo "❌ PR description is too short (${#CLEAN_BODY} characters). Please provide a detailed description of at least $MIN_LENGTH characters explaining the changes."
+          echo "💡 Consider including:"
+          echo "  - What changes were made"
+          echo "  - Why these changes are needed"
+          echo "  - How to test the changes"
+          echo "  - Any breaking changes"
+          exit 1
+        fi
+
+        echo "✅ PR description meets minimum requirements (${#CLEAN_BODY} characters)"

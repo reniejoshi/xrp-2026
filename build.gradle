@@ -1,0 +1,237 @@
+
+plugins {
+    id("java")
+    id("edu.wpi.first.GradleRIO") version "2026.2.1"
+    id("idea")
+    id("pmd")
+    id("com.github.spotbugs") version "6.0.26"
+}
+
+def javaVersion = JavaVersion.VERSION_17
+
+java {
+    sourceCompatibility = javaVersion
+    targetCompatibility = javaVersion
+}
+
+def ROBOT_MAIN_CLASS = "org.tahomarobotics.robot.Robot"
+
+// Define my targets (RoboRIO) and artifacts (deployable files)
+// This is added by GradleRIO's backing project DeployUtils.
+deploy {
+    targets {
+        roborio(getTargetTypeClass('RoboRIO')) {
+            // Team number is loaded either from the .wpilib/wpilib_preferences.json
+            // or from command line. If not found an exception will be thrown.
+            // You can use getTeamOrDefault(team) instead of getTeamNumber if you
+            // want to store a team number in this file.
+            team = project.frc.getTeamNumber()
+            debug = project.frc.getDebugOrDefault(false)
+
+            artifacts {
+                // First part is artifact name, 2nd is artifact type
+                // getTargetTypeClass is a shortcut to get the class type using a string
+
+                frcJava(getArtifactTypeClass('FRCJavaArtifact')) {
+                }
+
+                // Static files artifact
+                frcStaticFileDeploy(getArtifactTypeClass('FileTreeArtifact')) {
+                    files = project.fileTree('src/main/deploy')
+                    directory = '/home/lvuser/deploy'
+                    deleteOldFiles = false // Change to true to delete files on roboRIO that no
+                                           // longer exist in deploy directory of this project
+                }
+            }
+        }
+    }
+}
+
+def deployArtifact = deploy.targets.roborio.artifacts.frcJava
+
+// Set to true to use debug for JNI.
+wpi.java.debugJni = false
+
+// Set this to true to enable desktop support.
+//noinspection GroovyUnusedAssignment
+def includeDesktopSupport = true
+
+dependencies {
+    annotationProcessor wpi.java.deps.wpilibAnnotations()
+    implementation wpi.java.deps.wpilib()
+    implementation wpi.java.vendor.java()
+    implementation "org.tinylog:tinylog-api:2.7.0"
+    implementation "org.tinylog:tinylog-impl:2.7.0"
+
+    roborioDebug wpi.java.deps.wpilibJniDebug(wpi.platforms.roborio)
+    roborioDebug wpi.java.vendor.jniDebug(wpi.platforms.roborio)
+
+    roborioRelease wpi.java.deps.wpilibJniRelease(wpi.platforms.roborio)
+    roborioRelease wpi.java.vendor.jniRelease(wpi.platforms.roborio)
+    
+    nativeDebug wpi.java.deps.wpilibJniDebug(wpi.platforms.desktop)
+    nativeDebug wpi.java.vendor.jniDebug(wpi.platforms.desktop)
+    simulationDebug wpi.sim.enableDebug()
+
+    nativeRelease wpi.java.deps.wpilibJniRelease(wpi.platforms.desktop)
+    nativeRelease wpi.java.vendor.jniRelease(wpi.platforms.desktop)
+    simulationRelease wpi.sim.enableRelease()
+
+
+    testImplementation platform("org.junit:junit-bom:5.11.4")
+    testImplementation "org.junit.jupiter:junit-jupiter-api"
+    testImplementation "org.junit.jupiter:junit-jupiter-params"
+}
+
+testing {
+    suites {
+        test {
+            useJUnitJupiter()
+        }
+    }
+}
+
+test {
+    systemProperty 'junit.jupiter.extensions.autodetection.enabled', 'true'
+}
+
+// Simulation configuration (e.g. environment variables).
+wpi.sim.addGui().defaultEnabled = true
+wpi.sim.addDriverstation()
+
+// Setting up my Jar File. In this case, adding all libraries into the main jar ('fat jar')
+// in order to make them all available at runtime. Also adding the manifest so WPILib
+// knows where to look for our Robot Class.
+jar {
+    from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
+    from sourceSets.main.allSource
+    manifest edu.wpi.first.gradlerio.GradleRIOPlugin.javaManifest(ROBOT_MAIN_CLASS)
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+}
+
+// Configure jar and deploy tasks
+deployArtifact.jarTask = jar
+wpi.java.configureExecutableTasks(jar)
+wpi.java.configureTestTasks(test)
+
+tasks.withType(JavaCompile) {
+    // Configure string concat to always inline compile
+    options.compilerArgs.add '-XDstringConcat=inline'
+    // Enable lint warnings (excluding processing warnings from dependencies)
+    options.compilerArgs.add '-Xlint:all,-processing,-classfile'
+    // Treat warnings as errors when building in CI or with -PwarningsAsErrors=true
+    if (project.hasProperty('warningsAsErrors')) {
+        options.compilerArgs.add '-Werror'
+    }
+}
+
+// PMD static analysis configuration
+pmd {
+    toolVersion = "7.8.0"
+    consoleOutput = true
+    ruleSetFiles = files("config/pmd/ruleset.xml")
+    ruleSets = [] // Disable default rulesets, use only our custom ruleset
+}
+
+tasks.withType(Pmd) {
+    reports {
+        xml.required = false
+        html.required = true
+    }
+}
+
+// SpotBugs static analysis configuration
+spotbugs {
+    toolVersion = "4.8.6"
+    excludeFilter = file("config/spotbugs/exclude.xml")
+}
+
+tasks.withType(com.github.spotbugs.snom.SpotBugsTask) {
+    reports {
+        xml.required = false
+        html.required = true
+    }
+}
+
+
+idea {
+    project {
+        // The project.sourceCompatibility setting is not always picked up, so we set explicitly
+        languageLevel = javaVersion
+    }
+    module {
+        // Improve development & (especially) debugging experience (and IDEA's capabilities) by having libraries' source & javadoc attached
+        downloadJavadoc = true
+        downloadSources = true
+        // Exclude the following from indexing and search
+        excludeDirs.add(file(".run"))
+        excludeDirs.add(file(".vscode"))
+    }
+}
+
+// AdvantageScope Assets Configuration
+def assetDir = file("advantage-scope-assets")
+def assetZipName = "advantagescope-assets.zip"
+def githubRepo = "bear-metal-2046/robot-2026"
+
+// Task to bundle AdvantageScope assets into a zip for release
+tasks.register('bundleAssets', Zip) {
+    group = 'advantagescope'
+    description = 'Bundle AdvantageScope assets into a zip file for GitHub release'
+
+    from(assetDir) {
+        exclude 'README.txt'
+    }
+    archiveFileName = assetZipName
+    destinationDirectory = layout.buildDirectory.dir('assets')
+
+    doFirst {
+        if (!assetDir.exists()) {
+            throw new GradleException("Asset directory '${assetDir}' does not exist")
+        }
+    }
+
+    doLast {
+        println "Assets bundled to: ${destinationDirectory.get()}/${assetZipName}"
+        println "Upload this file to a GitHub release at: https://github.com/${githubRepo}/releases"
+    }
+}
+
+// Task to install AdvantageScope assets from the latest GitHub release
+// Uses gh CLI for authentication (works with private repos)
+tasks.register('installAdvantagescopeAssets') {
+    group = 'advantagescope'
+    description = 'Download and install AdvantageScope assets from the latest GitHub release'
+
+    doLast {
+        def zipFile = new File(layout.buildDirectory.get().asFile, "downloaded-${assetZipName}")
+        zipFile.parentFile.mkdirs()
+
+        println "Downloading ${assetZipName} from latest release..."
+
+        // Use gh CLI for authenticated download (works with private repos)
+        def result = exec {
+            commandLine 'gh', 'release', 'download', '--repo', githubRepo,
+                        '--pattern', assetZipName, '--dir', zipFile.parentFile.absolutePath,
+                        '--clobber'
+            ignoreExitValue = true
+        }
+
+        if (result.exitValue != 0) {
+            throw new GradleException("Failed to download assets. Make sure 'gh' CLI is installed and authenticated.")
+        }
+
+        def downloadedFile = new File(zipFile.parentFile, assetZipName)
+        if (!downloadedFile.exists()) {
+            throw new GradleException("Download completed but file not found: ${downloadedFile}")
+        }
+
+        println "Extracting to ${assetDir}..."
+        assetDir.mkdirs()
+
+        ant.unzip(src: downloadedFile, dest: assetDir)
+
+        println "AdvantageScope assets installed successfully!"
+        downloadedFile.delete()
+    }
+}

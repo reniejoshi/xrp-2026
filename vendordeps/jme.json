@@ -1,0 +1,30 @@
+{
+    "fileName": "jme.json",
+    "name": "jmonkeyengine-minie",
+    "version": "9.0.3",
+    "frcYear": "2026",
+    "uuid": "a1b2c3d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
+    "mavenUrls": [
+        "https://repo1.maven.org/maven2"
+    ],
+    "jsonUrl": "",
+    "javaDependencies": [
+        {
+            "groupId": "org.jmonkeyengine",
+            "artifactId": "jme3-core",
+            "version": "3.8.1-stable"
+        },
+        {
+            "groupId": "org.jmonkeyengine",
+            "artifactId": "jme3-desktop",
+            "version": "3.8.1-stable"
+        },
+        {
+            "groupId": "com.github.stephengold",
+            "artifactId": "Minie",
+            "version": "9.0.3"
+        }
+    ],
+    "jniDependencies": [],
+    "cppDependencies": []
+}
