@@ -23,4 +23,14 @@
 */
 package org.tahomarobotics.robot.chassis;
 
-public class Chassis {}
+public class Chassis {
+  ChassisSubsystem chassis;
+
+  public Chassis() {
+    this(new ChassisSubsystem());
+  }
+
+  Chassis(ChassisSubsystem chassis) {
+    this.chassis = chassis;
+  }
+}

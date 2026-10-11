@@ -23,10 +23,21 @@
 */
 package org.tahomarobotics.robot.chassis;
 
+import edu.wpi.first.wpilibj.xrp.XRPMotor;
 import org.tahomarobotics.robot.util.AbstractSubsystem;
 
 public class ChassisSubsystem extends AbstractSubsystem {
+  private final XRPMotor leftDriveMotor, rightDriveMotor;
+
+  public ChassisSubsystem() {
+    this.leftDriveMotor = new XRPMotor(0);
+    this.rightDriveMotor = new XRPMotor(1);
+    rightDriveMotor.setInverted(true);
+  }
 
   @Override
-  public void subsystemPeriodic() {}
+  public void subsystemPeriodic() {
+    leftDriveMotor.set(1.0);
+    rightDriveMotor.set(1.0);
+  }
 }

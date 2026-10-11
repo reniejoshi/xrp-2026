@@ -39,9 +39,6 @@ public class Robot extends LoggedRobot {
 
   private final RobotContainer robotContainer;
 
-  private static final int SUB_FRAMES_PER_FRAME = 10;
-  private int subFrame = SUB_FRAMES_PER_FRAME - 1;
-
   Robot() {
     super(Robot.isSimulation() ? 0.002 : 0.02);
 
@@ -74,14 +71,7 @@ public class Robot extends LoggedRobot {
 
   @Override
   public void robotPeriodic() {
-
-    // downsample high-frequency simulation updates
-    if (Robot.isSimulation()) {
-      subFrame = ++subFrame % SUB_FRAMES_PER_FRAME;
-      if (subFrame != 0) {
-        return;
-      }
-    }
+    CommandScheduler.getInstance().run();
   }
 
   @Override

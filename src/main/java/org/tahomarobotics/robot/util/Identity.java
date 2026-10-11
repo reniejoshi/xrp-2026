@@ -34,6 +34,7 @@ public final class Identity {
 
   public enum RobotIdentity {
     // Put MACs here exactly as logged by this code ("AA:BB:CC:DD:EE:FF").
+    XRP("28:cd:c1:15:8c:49"),
     SIMULATION("");
 
     final String[] macs;
@@ -54,36 +55,33 @@ public final class Identity {
 
   /** Detect identity by comparing NIC MACs against the enum's MAC strings. */
   public static RobotIdentity getIdentity() {
-    if (Robot.isSimulation()) {
-      return RobotIdentity.SIMULATION;
-    }
-    if (identity == null) {
-      org.tinylog.Logger.info("Checking for robot identity...");
-      try {
-        Enumeration<NetworkInterface> e = NetworkInterface.getNetworkInterfaces();
-        Logger.info("MAC addresses:");
-        while (e.hasMoreElements()) {
-          byte[] mac = e.nextElement().getHardwareAddress();
-          if (mac == null || mac.length == 0) continue;
-
-          String macStr = formatMac(mac);
-          Logger.debug("Detected MAC address: {}", macStr);
-          for (RobotIdentity id : RobotIdentity.values()) {
-            if (id.matches(macStr)) {
-              identity = id;
-              return id;
-            }
-          }
-        }
-      } catch (Exception ignored) {
-        Logger.error("Couldn't find Robot Identity");
-      }
-
-      // TODO: return default robot identity
-      return RobotIdentity.SIMULATION;
-    } else {
+    if (identity != null) {
       return identity;
     }
+
+    org.tinylog.Logger.info("Checking for robot identity...");
+    try {
+      Enumeration<NetworkInterface> e = NetworkInterface.getNetworkInterfaces();
+      Logger.info("MAC addresses:");
+      while (e.hasMoreElements()) {
+        byte[] mac = e.nextElement().getHardwareAddress();
+        if (mac == null || mac.length == 0) continue;
+
+        String macStr = formatMac(mac);
+        Logger.debug("Detected MAC address: {}", macStr);
+        for (RobotIdentity id : RobotIdentity.values()) {
+          if (id.matches(macStr)) {
+            identity = id;
+            return id;
+          }
+        }
+      }
+    } catch (Exception ignored) {
+      Logger.error("Couldn't find Robot Identity");
+    }
+
+    identity = Robot.isSimulation() ? RobotIdentity.SIMULATION : RobotIdentity.XRP;
+    return identity;
   }
 
   private static String formatMac(byte[] mac) {

@@ -23,15 +23,19 @@
 */
 package org.tahomarobotics.robot;
 
+import org.tahomarobotics.robot.chassis.Chassis;
+
 /**
  * The RobotContainer declares the robot's structure: subsystems, commands and simulations. All the
  * robot's components and their relationships are declared here rather than scattered throughout the
  * codebase.
  */
 public final class RobotContainer implements AutoCloseable {
+  final Chassis chassis;
   final OI oi;
 
   public RobotContainer() {
+    chassis = new Chassis();
     oi = new OI(this);
   }
 
